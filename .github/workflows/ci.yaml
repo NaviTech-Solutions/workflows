@@ -1,0 +1,93 @@
+name: Build, Test, and Push to ECR
+
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        description: "AWS region"
+        required: true
+        default: "ap-east-1"
+      aws-access-key-id:
+        description: "AWS Access Key ID"
+        required: true
+      aws-secret-access-key:
+        description: "AWS Secret Access Key"
+        required: true
+
+jobs:
+  build-test-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ inputs.aws-region }}
+      ECR_REGISTRY: 390402541453.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com
+
+    steps:
+      # 01. 檢出代碼
+      - name: 01. 檢出代碼
+        uses: actions/checkout@v4.2.2
+
+      # 02. 設置當前分支變數，並根據分支設置映像標籤前綴
+      - name: 02. 設置變數並打印信息
+        run: |
+          BRANCH_NAME=${{ github.ref_name }}
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "Current branch: $BRANCH_NAME"
+
+          REPO_NAME=$(basename "$PWD" | tr '[:upper:]' '[:lower:]')
+          echo "ECR_REPOSITORY=$REPO_NAME" >> $GITHUB_ENV
+
+          if [[ "$BRANCH_NAME" == "master" ]]; then
+            TAG_PREFIX="prd"
+          elif [[ "$BRANCH_NAME" == "develop" ]]; then
+            TAG_PREFIX="dev"
+          else
+            TAG_PREFIX="unknown"
+          fi
+          echo "TAG_PREFIX=$TAG_PREFIX" >> $GITHUB_ENV
+
+          IMAGE_TAG="${TAG_PREFIX}-$(date -u +"%Y%m%d-%H%M_UTC8" -d '+8 hours')"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+          echo "ECR Repository: $ECR_REGISTRY/$REPO_NAME"
+          echo "Image Tag: $IMAGE_TAG"
+
+      # 03. 配置 AWS 認證
+      - name: 03. 配置 AWS 認證
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ inputs.aws-access-key-id }}
+          aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+          aws-region: ${{ inputs.aws-region }}
+
+      # 04. 自動檢查並建立 ECR Repository
+      - name: 04. 自動檢查並建立 ECR Repository
+        uses: int128/create-ecr-repository-action@v1.325.0
+        with:
+          repository: ${{ env.ECR_REPOSITORY }}
+          public: false
+
+      # 05. 登入 Amazon ECR
+      - name: 05. 登入 Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          region: ${{ inputs.aws-region }}
+
+      # 06. 設置 Docker Buildx
+      - name: 06. 設置 Docker Buildx
+        uses: docker/setup-buildx-action@v3.7.1
+        with:
+          driver: docker-container
+          driver-opts: network=host
+
+      # 07. 構建並推送 Docker 映像到 Amazon ECR
+      - name: 07. 構建並推送 Docker 映像
+        uses: docker/build-push-action@v6.9.0
+        with:
+          context: .
+          file: .gitea/workflows/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
