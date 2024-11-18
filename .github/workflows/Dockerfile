@@ -18,7 +18,10 @@ RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/bi
 RUN java -version && mvn -v
 
 # 複製 settings.xml 到 Maven 配置目錄
-COPY .gitea/workflows/settings.xml /root/.m2/settings.xml
+# COPY .gitea/workflows/settings.xml /root/.m2/settings.xml
+# 下載 GitHub 上的 settings.xml
+RUN curl -fsSL https://raw.githubusercontent.com/NaviTech-Solutions/workflows/refs/heads/main/.github/workflows/settings.xml -o /root/.m2/settings.xml
+
 
 # 安裝依賴
 COPY pom.xml .
