@@ -80,15 +80,15 @@ jobs:
           driver: docker-container
           driver-opts: network=host
 
-      - name: 07.下載 Dockerfile
-        run: curl -o Dockerfile https://raw.githubusercontent.com/NaviTech-Solutions/workflows/refs/heads/main/.github/workflows/Dockerfile
+      # - name: 07.下載 Dockerfile
+      #   run: curl -o Dockerfile https://raw.githubusercontent.com/NaviTech-Solutions/workflows/refs/heads/main/.github/workflows/Dockerfile
 
       # 07. 構建並推送 Docker 映像到 Amazon ECR
       - name: 08. 構建並推送 Docker 映像
         uses: docker/build-push-action@v6.9.0
         with:
           context: .
-          file: Dockerfile
+          file: https://raw.githubusercontent.com/NaviTech-Solutions/workflows/refs/heads/main/.github/workflows/Dockerfile
           platforms: linux/amd64
           push: true
           tags: |
