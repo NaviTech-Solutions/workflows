@@ -1,0 +1,89 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <!-- 本地倉庫路徑 -->
+    <localRepository>/root/.m2/repository</localRepository>
+
+    <!-- 配置認證信息 -->
+    <servers>
+        <server>
+            <id>nexus-polarbyte</id>
+            <username>polar</username>
+            <password>uKd48kTb#Q#8aqxl</password>
+        </server>
+        <server>
+            <id>maven-public</id>
+            <username>polar</username>
+            <password>uKd48kTb#Q#8aqxl</password>
+        </server>
+    </servers>
+
+    <!-- 配置鏡像，只使用 Nexus Group Repository 作為 Proxy -->
+    <mirrors>
+        <mirror>
+            <id>maven-public</id>
+            <mirrorOf>*</mirrorOf>
+            <url>http://nexus.polarbyte.cc/repository/maven-public/</url>
+        </mirror>
+    </mirrors>
+
+    <!-- 配置倉庫列表 -->
+    <profiles>
+        <profile>
+            <id>nexus-profile</id>
+            <repositories>
+                <!-- 私有倉庫 (Nexus Releases 和 Snapshots) -->
+                <repository>
+                    <id>nexus-polarbyte-releases</id>
+                    <url>http://nexus.polarbyte.cc/repository/maven-releases/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+                <repository>
+                    <id>nexus-polarbyte-snapshots</id>
+                    <url>http://nexus.polarbyte.cc/repository/maven-snapshots/</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+                <!-- 公共代理倉庫 (maven-public) -->
+                <repository>
+                    <id>maven-public</id>
+                    <url>http://nexus.polarbyte.cc/repository/maven-public/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+
+        <profile>
+            <id>jdk22</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <jdk>22</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.source>22</maven.compiler.source>
+                <maven.compiler.target>22</maven.compiler.target>
+                <maven.compiler.compilerVersion>22</maven.compiler.compilerVersion>
+            </properties>
+        </profile>
+    </profiles>
+
+    <!-- 啟用 Nexus 配置 -->
+    <activeProfiles>
+        <activeProfile>nexus-profile</activeProfile>
+    </activeProfiles>
+</settings>
