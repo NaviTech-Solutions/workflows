@@ -14,6 +14,8 @@ RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/bi
     rm /tmp/maven.zip && \
     ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
 
+
+
 # 顯示 Java 和 Maven 的版本資訊
 RUN java -version && mvn -v
 
@@ -38,6 +40,9 @@ FROM openjdk:22-jdk-slim-bookworm
 ENV PARAMS=""
 ENV TZ=PRC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 安裝字體相關依賴
+RUN apt-get update && apt-get install -y fontconfig libfreetype6 && rm -rf /var/lib/apt/lists/*
 
 # 拷貝 JAR 文件
 COPY --from=build /app/target/*.jar /app.jar
