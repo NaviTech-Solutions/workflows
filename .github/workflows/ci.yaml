@@ -54,36 +54,44 @@ jobs:
           echo "ECR Repository: $ECR_REGISTRY/$REPO_NAME"
           echo "Image Tag: $IMAGE_TAG"
 
-      # 03. 配置 AWS 認證
-      - name: 03. 配置 AWS 認證
+      # 03. 檢查 TAG_PREFIX 是否為 unknown
+      - name: 03. 檢查 TAG_PREFIX 是否為 unknown
+        run: |
+          if [[ "${{ env.TAG_PREFIX }}" == "unknown" ]]; then
+            echo "TAG_PREFIX 為 unknown，停止工作流執行。"
+            exit 1
+          fi
+
+      # 04. 配置 AWS 認證
+      - name: 04. 配置 AWS 認證
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ inputs.aws-access-key-id }}
           aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
           aws-region: ${{ inputs.aws-region }}
 
-      # 04. 自動檢查並建立 ECR Repository
-      - name: 04. 自動檢查並建立 ECR Repository
+      # 05. 自動檢查並建立 ECR Repository
+      - name: 05. 自動檢查並建立 ECR Repository
         uses: int128/create-ecr-repository-action@v1.325.0
         with:
           repository: ${{ env.ECR_REPOSITORY }}
           public: false
 
-      # 05. 登入 Amazon ECR
-      - name: 05. 登入 Amazon ECR
+      # 06. 登入 Amazon ECR
+      - name: 06. 登入 Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
         with:
           region: ${{ inputs.aws-region }}
 
-      # 06. 設置 Docker Buildx
-      - name: 06. 設置 Docker Buildx
+      # 07. 設置 Docker Buildx
+      - name: 07. 設置 Docker Buildx
         uses: docker/setup-buildx-action@v3.7.1
         with:
           driver: docker-container
           driver-opts: network=host
 
-      # 07. 構建並推送 Docker 映像到 Amazon ECR
-      - name: 07. 構建並推送 Docker 映像
+      # 08. 構建並推送 Docker 映像到 Amazon ECR
+      - name: 08. 構建並推送 Docker 映像
         uses: docker/build-push-action@v6.9.0
         with:
           context: .
