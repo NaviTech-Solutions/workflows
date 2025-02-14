@@ -41,6 +41,8 @@ jobs:
             TAG_PREFIX="prd"
           elif [[ "$BRANCH_NAME" == "0999" ]]; then
             TAG_PREFIX="0999"
+          elif [[ "$BRANCH_NAME" == "ss95" ]]; then
+            TAG_PREFIX="ss95"
           elif [[ "$BRANCH_NAME" == "uat" ]]; then
             TAG_PREFIX="uat"
           elif [[ "$BRANCH_NAME" == "develop" ]]; then
