@@ -48,4 +48,4 @@ RUN apt-get update && apt-get install -y fontconfig libfreetype6 && rm -rf /var/
 COPY --from=build /app/target/*.jar /app.jar
 
 # 啟動應用
-ENTRYPOINT ["sh", "-c", "java -jar $JAVA_OPTS /app.jar $PARAMS"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app.jar $PARAMS"]
