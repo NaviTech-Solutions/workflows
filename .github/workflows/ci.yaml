@@ -45,6 +45,8 @@ jobs:
             TAG_PREFIX="ss95"
           elif [[ "$BRANCH_NAME" == "kane" ]]; then
             TAG_PREFIX="kane"
+          elif [[ "$BRANCH_NAME" == "u699" ]]; then
+            TAG_PREFIX="u699"
           elif [[ "$BRANCH_NAME" == "uat" ]]; then
             TAG_PREFIX="uat"
           elif [[ "$BRANCH_NAME" == "develop" ]]; then
