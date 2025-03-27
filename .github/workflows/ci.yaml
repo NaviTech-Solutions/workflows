@@ -49,6 +49,20 @@ jobs:
             TAG_PREFIX="u699"
           elif [[ "$BRANCH_NAME" == "u666" ]]; then
             TAG_PREFIX="u666"
+          elif [[ "$BRANCH_NAME" == "9y" ]]; then
+            TAG_PREFIX="9y"
+          elif [[ "$BRANCH_NAME" == "u16" ]]; then
+            TAG_PREFIX="u16"
+          elif [[ "$BRANCH_NAME" == "u18" ]]; then
+            TAG_PREFIX="u18"
+          elif [[ "$BRANCH_NAME" == "u78" ]]; then
+            TAG_PREFIX="u78"
+          elif [[ "$BRANCH_NAME" == "u88" ]]; then
+            TAG_PREFIX="u88"
+          elif [[ "$BRANCH_NAME" == "u98" ]]; then
+            TAG_PREFIX="u98"
+          elif [[ "$BRANCH_NAME" == "u166" ]]; then
+            TAG_PREFIX="u166"
           elif [[ "$BRANCH_NAME" == "u616" ]]; then
             TAG_PREFIX="u616"
           elif [[ "$BRANCH_NAME" == "uat" ]]; then
