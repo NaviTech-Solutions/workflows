@@ -9,12 +9,14 @@ RUN apt-get update && \
 
 # 下載並安裝 Maven
 ENV MAVEN_VERSION=3.9.9
-RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.zip -o /tmp/maven.zip && \
+#RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.zip -o /tmp/maven.zip && \
+#    unzip /tmp/maven.zip -d /opt/ && \
+#    rm /tmp/maven.zip && \
+#    ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
+RUN curl -fsSL https://dev-polar-v2.s3.ap-east-1.amazonaws.com/apk/apache-maven-3.9.9-bin.zip -o /tmp/maven.zip && \
     unzip /tmp/maven.zip -d /opt/ && \
     rm /tmp/maven.zip && \
     ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
-
-
 
 # 顯示 Java 和 Maven 的版本資訊
 RUN java -version && mvn -v
