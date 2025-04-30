@@ -102,7 +102,5 @@ jobs:
           file: https://raw.githubusercontent.com/NaviTech-Solutions/workflows/refs/heads/main/.github/workflows/Dockerfile
           platforms: linux/amd64
           push: true
-          build-args: |
-            GITHUB_TOKEN=${{ secrets.NAVITECH_SOLUTIONS_TOKEN }}
           tags: |
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
