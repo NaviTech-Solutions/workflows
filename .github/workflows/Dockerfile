@@ -26,7 +26,7 @@ RUN java -version && mvn -v
 # 下載 GitHub 上的 settings.xml
 USER root
 RUN mkdir -p /root/.m2 && \
-    curl -fsSL https://gitea.polarbase.cc/Polar/Ubet-Deploy/raw/branch/main/settings.xml -o /root/.m2/settings.xml
+    curl -fsSL https://raw.githubusercontent.com/NaviTech-Solutions/workflows/refs/heads/main/.github/workflows/settings.xml -o /root/.m2/settings.xml
 
 # 安裝依賴
 COPY pom.xml .
