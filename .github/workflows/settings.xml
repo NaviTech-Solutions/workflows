@@ -24,7 +24,7 @@
         <mirror>
             <id>maven-public</id>
             <mirrorOf>*</mirrorOf>
-            <url>http://nexus.polarbyte.cc/repository/maven-public/</url>
+            <url>https://nexus.polarbyte.cc/repository/maven-public/</url>
         </mirror>
     </mirrors>
 
@@ -36,7 +36,7 @@
                 <!-- 私有倉庫 (Nexus Releases 和 Snapshots) -->
                 <repository>
                     <id>nexus-polarbyte-releases</id>
-                    <url>http://nexus.polarbyte.cc/repository/maven-releases/</url>
+                    <url>https://nexus.polarbyte.cc/repository/maven-releases/</url>
                     <releases>
                         <enabled>true</enabled>
                     </releases>
@@ -46,7 +46,7 @@
                 </repository>
                 <repository>
                     <id>nexus-polarbyte-snapshots</id>
-                    <url>http://nexus.polarbyte.cc/repository/maven-snapshots/</url>
+                    <url>https://nexus.polarbyte.cc/repository/maven-snapshots/</url>
                     <releases>
                         <enabled>false</enabled>
                     </releases>
@@ -57,7 +57,7 @@
                 <!-- 公共代理倉庫 (maven-public) -->
                 <repository>
                     <id>maven-public</id>
-                    <url>http://nexus.polarbyte.cc/repository/maven-public/</url>
+                    <url>https://nexus.polarbyte.cc/repository/maven-public/</url>
                     <releases>
                         <enabled>true</enabled>
                     </releases>
