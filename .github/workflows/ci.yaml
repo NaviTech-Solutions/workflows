@@ -83,7 +83,7 @@ jobs:
 
       # 05. 登入 Amazon ECR
       - name: 05. 登入 Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@v2.1.2
         with:
           region: ${{ inputs.aws-region }}
 
