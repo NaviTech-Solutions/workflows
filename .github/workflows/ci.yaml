@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ inputs.aws-region }}
+      AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+      AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
       ECR_REGISTRY: 390402541453.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com
     steps:
       # 01. 檢出代碼
@@ -42,44 +44,54 @@ jobs:
           echo "ECR Repository: $ECR_REGISTRY/$REPO_NAME"
           echo "Image Tag: $IMAGE_TAG"
 
-      # 03. 配置 AWS 認證
-      - name: 03. 配置 AWS 認證
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ inputs.aws-access-key-id }}
-          aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
-          aws-region: ${{ inputs.aws-region }}
+      # 03. 檢查並建立 ECR Repository
+      - name: 03. 檢查並建立 ECR Repository
+        run: |
+          # 用 aws-cli 容器來操作，避免 Job Container 沒有 aws cli 的問題
+          docker run --rm \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e AWS_DEFAULT_REGION=${{ inputs.aws-region }} \
+            amazon/aws-cli ecr describe-repositories \
+              --repository-names ${{ env.ECR_REPOSITORY }} \
+              --region ${{ inputs.aws-region }} 2>/dev/null || \
+          docker run --rm \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e AWS_DEFAULT_REGION=${{ inputs.aws-region }} \
+            amazon/aws-cli ecr create-repository \
+              --repository-name ${{ env.ECR_REPOSITORY }} \
+              --region ${{ inputs.aws-region }}
 
-      # 04. 自動檢查並建立 ECR Repository
-      - name: 04. 自動檢查並建立 ECR Repository
-        uses: int128/create-ecr-repository-action@v1.325.0
-        with:
-          repository: ${{ env.ECR_REPOSITORY }}
-          public: false
+      # 04. 登入 Amazon ECR
+      - name: 04. 登入 Amazon ECR
+        run: |
+          # 用 aws-cli 容器獲取 ECR token，然後直接 docker login
+          docker run --rm \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e AWS_DEFAULT_REGION=${{ inputs.aws-region }} \
+            amazon/aws-cli ecr get-login-password \
+              --region ${{ inputs.aws-region }} | \
+          docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
 
-      # 05. 登入 Amazon ECR
-      - name: 05. 登入 Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2.1.2
-        with:
-          region: ${{ inputs.aws-region }}
-
-      # 06. 下載共享 Dockerfile
-      - name: 06. 下載共享 Dockerfile
+      # 05. 下載共享 Dockerfile
+      - name: 05. 下載共享 Dockerfile
         run: |
           curl -fsSL -o /tmp/Dockerfile \
             "https://raw.githubusercontent.com/NaviTech-Solutions/workflows/refs/heads/main/.github/workflows/Dockerfile"
           echo "Dockerfile downloaded:"
           cat /tmp/Dockerfile
 
-      # 07. 構建 Docker 映像
-      - name: 07. 構建 Docker 映像
+      # 06. 構建 Docker 映像
+      - name: 06. 構建 Docker 映像
         run: |
           docker build \
             -f /tmp/Dockerfile \
             -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} \
             .
 
-      # 08. 推送 Docker 映像到 Amazon ECR
-      - name: 08. 推送 Docker 映像到 Amazon ECR
+      # 07. 推送 Docker 映像到 Amazon ECR
+      - name: 07. 推送 Docker 映像到 Amazon ECR
         run: |
           docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
