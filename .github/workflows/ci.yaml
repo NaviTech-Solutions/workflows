@@ -63,16 +63,6 @@ jobs:
         with:
           region: ${{ inputs.aws-region }}
 
-      # 🔍 05-1. 測試 AWS 身份
-      - name: Debug AWS Identity
-        run: |
-          aws sts get-caller-identity
-      
-      # 🔍 05-2. 測試 ECR pull（🔥最重要）
-      - name: Debug ECR Pull
-        run: |
-          docker pull 390402541453.dkr.ecr.ap-east-1.amazonaws.com/openjdk:22-jdk-slim-bookworm
-
       # 06. 下載共享 Dockerfile
       - name: 06. 下載共享 Dockerfile
         run: |
