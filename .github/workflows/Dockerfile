@@ -1,6 +1,6 @@
 # 第一階段：構建階段
-#FROM 390402541453.dkr.ecr.ap-east-1.amazonaws.com/openjdk:22-jdk-slim-bookworm AS build
-FROM openjdk:22-jdk-slim-bookworm AS build
+FROM 390402541453.dkr.ecr.ap-east-1.amazonaws.com/openjdk:22-jdk-slim-bookworm AS build
+
 WORKDIR /app
 
 # 安裝必要的工具
@@ -38,8 +38,8 @@ COPY src ./src
 RUN mvn clean install -DskipTests -s /root/.m2/settings.xml
 
 # 第二階段：構建最終映像
-#FROM 390402541453.dkr.ecr.ap-east-1.amazonaws.com/openjdk:22-jdk-slim-bookworm
-FROM openjdk:22-jdk-slim-bookworm 
+FROM 390402541453.dkr.ecr.ap-east-1.amazonaws.com/openjdk:22-jdk-slim-bookworm
+
 ENV PARAMS=""
 ENV TZ=PRC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
