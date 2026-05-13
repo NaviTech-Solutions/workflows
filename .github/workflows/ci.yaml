@@ -6,14 +6,16 @@ on:
       aws-region:
         description: "AWS region"
         required: true
+        type: string
         default: "ap-east-1"
       aws-access-key-id:
         description: "AWS Access Key ID"
         required: true
+        type: string
       aws-secret-access-key:
         description: "AWS Secret Access Key"
         required: true
-
+        type: string
 jobs:
   build-test-and-push:
     runs-on: ubuntu-latest
@@ -25,7 +27,7 @@ jobs:
     steps:
       # 01. 檢出代碼
       - name: 01. 檢出代碼
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       # 02. 設置變數並打印信息
       - name: 02. 設置變數並打印信息
@@ -68,7 +70,7 @@ jobs:
 
       # 03. 配置 AWS 認證
       - name: 03. 配置 AWS 認證
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v6.1.1
         with:
           aws-access-key-id: ${{ inputs.aws-access-key-id }}
           aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
@@ -76,27 +78,27 @@ jobs:
 
       # 04. 自動檢查並建立 ECR Repository
       - name: 04. 自動檢查並建立 ECR Repository
-        uses: int128/create-ecr-repository-action@v1.325.0
+        uses: int128/create-ecr-repository-action@v1.459.0
         with:
           repository: ${{ env.ECR_REPOSITORY }}
           public: false
 
       # 05. 登入 Amazon ECR
       - name: 05. 登入 Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2.1.2
+        uses: aws-actions/amazon-ecr-login@v2.1.5
         with:
           region: ${{ inputs.aws-region }}
 
       # 06. 設置 Docker Buildx
       - name: 06. 設置 Docker Buildx
-        uses: docker/setup-buildx-action@v3.7.1
+        uses: docker/setup-buildx-action@v4.0.0
         with:
           driver: docker-container
           driver-opts: network=host
-          
+
       # 07. 構建並推送 Docker 映像到 Amazon ECR
       - name: 07. 構建並推送 Docker 映像
-        uses: docker/build-push-action@v6.9.0
+        uses: docker/build-push-action@v7.1.0
         with:
           context: .
           file: https://raw.githubusercontent.com/NaviTech-Solutions/workflows/refs/heads/main/.github/workflows/Dockerfile
@@ -104,3 +106,150 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+
+      # 08. 從 Discord-Mapping.csv 查詢分支對應的 Webhook
+      - name: 08. 查詢 Discord Webhook Mapping
+        if: always()
+        run: |
+          CSV=$(curl -sf \
+            "https://raw.githubusercontent.com/NaviTech-Solutions/workflows/main/.github/workflows/Discord-Mapping.csv" \
+            || echo "")
+
+          DISCORD_WEBHOOK=""
+          if [ -n "$CSV" ]; then
+            DISCORD_WEBHOOK=$(printf '%s' "$CSV" | awk -F',' -v branch="$BRANCH_NAME" \
+              'NR>1 && ($3==branch || $4==branch) { gsub(/\r/,"",$5); print $5; exit }')
+          fi
+
+          echo "DISCORD_WEBHOOK=$DISCORD_WEBHOOK" >> $GITHUB_ENV
+
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+            echo "Discord webhook found for branch: $BRANCH_NAME"
+          else
+            echo "No Discord webhook found for branch: $BRANCH_NAME（將跳過通知）"
+          fi
+
+      # 09-debug. 除錯：印出 Discord 通知所需變數
+      - name: 09-debug. 除錯 Discord 通知變數
+        if: always() && env.DISCORD_WEBHOOK != ''
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          COMMIT_AUTHOR: ${{ github.actor }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          echo "===== 環境變數 Env Vars ====="
+          echo "BRANCH_NAME   : $BRANCH_NAME"
+          echo "IMAGE_TAG     : $IMAGE_TAG"
+          echo "ECR_REGISTRY  : $ECR_REGISTRY"
+          echo "ECR_REPOSITORY: $ECR_REPOSITORY"
+          echo ""
+          echo "===== GitHub Context ====="
+          echo "REPO_NAME     : $REPO_NAME"
+          echo "COMMIT_AUTHOR : $COMMIT_AUTHOR"
+          echo "COMMIT_SHA    : $COMMIT_SHA"
+          echo "COMMIT_MSG    : $COMMIT_MSG"
+          echo ""
+          echo "===== 連結檢查 Link Check ====="
+          echo "server_url    : ${{ github.server_url }}"
+          echo "repository    : ${{ github.repository }}"
+          echo "run_id        : ${{ github.run_id }} (global, not used)"
+          echo "run_number    : ${{ github.run_number }} (sequential, used in URL)"
+          echo "CI_RUN_URL    : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          echo "COMMIT_URL    : ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          echo "REPO_URL      : ${{ github.server_url }}/${{ github.repository }}"
+          echo ""
+          echo "===== 工具版本 Tool Versions ====="
+          jq --version || echo "jq 未安裝 (jq not installed)"
+          curl --version | head -1
+          echo ""
+          echo "===== jq JSON 測試 ====="
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          jq -n \
+            --arg title "✅ test" \
+            --arg repo "$REPO_NAME" \
+            --arg branch "$BRANCH_NAME" \
+            --arg author "$COMMIT_AUTHOR" \
+            --arg commit "$SHORT_SHA" \
+            --arg image "$IMAGE_TAG" \
+            --arg message "$COMMIT_MSG" \
+            '{title:$title,repo:$repo,branch:$branch,author:$author,commit:$commit,image:$image,message:$message}' \
+            && echo "jq 組 JSON 成功 (jq build OK)" \
+            || echo "jq 組 JSON 失敗 (jq build FAILED)"
+
+      # 09. 通知 Discord（成功或失敗都會通知 Always notify）
+      - name: 09. 通知 Discord
+        if: always() && env.DISCORD_WEBHOOK != ''
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          COMMIT_AUTHOR: ${{ github.actor }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+
+          COMMIT_TITLE=$(printf '%s' "$COMMIT_MSG" | head -1 | tr -d '\r')
+          COMMIT_DESC=$(printf '%s' "$COMMIT_MSG" | tail -n +2 | grep -v '^#' | tr -d '\r' | sed '/^[[:space:]]*$/d' || true)
+
+          BUILD_TIME=$(date -u -d '+8 hours' +'%Y-%m-%d %H:%M UTC+8')
+
+          CI_RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+
+          if [ -n "$COMMIT_DESC" ]; then
+            DESC_FIELD=',{name:"📝 描述 Description",value:($bt+$desc+$bt),inline:false}'
+          else
+            DESC_FIELD=''
+          fi
+
+          JQ_FIELDS='[
+            {name:"📁 專案 Repo",value:($bt+$repo+$bt),inline:false},
+            {name:"🌿 分支 Branch",value:($bt+$branch+$bt),inline:true},
+            {name:"👤 提交者 Author",value:($bt+$author+$bt),inline:true},
+            {name:"🔖 提交 Commit",value:($bt+$commit+$bt),inline:true},
+            {name:"💬 提交訊息 Message",value:($bt+$message+$bt),inline:false}
+            '"$DESC_FIELD"'
+            ,{name:"🕐 打包時間 Build Time",value:($bt+$time+$bt),inline:false}
+            ,{name:"🐳 映像版本 Image",value:($bt+$image+$bt),inline:false}
+            ,{name:"🔗 連結 Links",value:("[📋 CI 執行記錄]("+$ci_url+")  |  [🔖 Commit]("+$commit_url+")  |  [📁 Repository]("+$repo_url+")"),inline:false}
+          ]'
+
+          if [ "$JOB_STATUS" = "success" ]; then
+            PAYLOAD=$(jq -n \
+              --arg bt '`' \
+              --arg repo "$REPO_NAME" \
+              --arg title "✅ CI 建置成功 Build Success" \
+              --arg branch "$BRANCH_NAME" \
+              --arg author "$COMMIT_AUTHOR" \
+              --arg commit "$SHORT_SHA" \
+              --arg image "$IMAGE_TAG" \
+              --arg message "$COMMIT_TITLE" \
+              --arg desc "$COMMIT_DESC" \
+              --arg time "$BUILD_TIME" \
+              --arg ci_url "$CI_RUN_URL" \
+              --arg commit_url "$COMMIT_URL" \
+              --arg repo_url "$REPO_URL" \
+              "{embeds:[{title:\$title,color:3066993,fields:$JQ_FIELDS}]}")
+          else
+            PAYLOAD=$(jq -n \
+              --arg bt '`' \
+              --arg repo "$REPO_NAME" \
+              --arg title "❌ CI 建置失敗 Build Failed" \
+              --arg branch "$BRANCH_NAME" \
+              --arg author "$COMMIT_AUTHOR" \
+              --arg commit "$SHORT_SHA" \
+              --arg image "$IMAGE_TAG" \
+              --arg message "$COMMIT_TITLE" \
+              --arg desc "$COMMIT_DESC" \
+              --arg time "$BUILD_TIME" \
+              --arg ci_url "$CI_RUN_URL" \
+              --arg commit_url "$COMMIT_URL" \
+              --arg repo_url "$REPO_URL" \
+              "{embeds:[{title:\$title,color:15158332,fields:$JQ_FIELDS}]}")
+          fi
+
+          curl -f -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
