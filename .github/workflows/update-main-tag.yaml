@@ -14,7 +14,8 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        #uses: actions/checkout@v6.0.2
+        uses: https://gitea.com/actions/checkout@v7
         with:
           fetch-depth: 0
 
