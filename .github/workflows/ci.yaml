@@ -27,7 +27,8 @@ jobs:
     steps:
       # 01. 檢出代碼
       - name: 01. 檢出代碼
-        uses: actions/checkout@v6.0.2
+        #uses: actions/checkout@v6.0.2
+        uses: https://gitea.com/actions/checkout@v7
 
       # 02. 設置變數並打印信息
       - name: 02. 設置變數並打印信息
